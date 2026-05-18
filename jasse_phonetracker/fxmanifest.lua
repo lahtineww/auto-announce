@@ -1,8 +1,8 @@
 fx_version 'cerulean'
 game 'gta5'
 
-name 'tk-phonetracker'
-author 'TK-Scripts'
+name 'jasse_phonetracker'
+author 'Jasse'
 version '1.0.0'
 description 'Phone Number Tracker for Police | ESX/QBCore/QBox'
 

@@ -1,5 +1,5 @@
 -- ──────────────────────────────────────────────────────────────────
--- tk-phonetracker | server/main.lua
+-- jasse_phonetracker | server/main.lua
 -- ──────────────────────────────────────────────────────────────────
 
 local FW       = nil   -- framework object (ESX shared / QBCore / QBox)
@@ -38,7 +38,7 @@ CreateThread(function()
         FW = exports['es_extended']:getSharedObject()
     end
 
-    print(('[tk-phonetracker] Framework: %s'):format(fwName))
+    print(('[jasse_phonetracker] Framework: %s'):format(fwName))
 end)
 
 -- ──────────────────────────────────────────────────────────────────
@@ -302,7 +302,7 @@ local function StopTracking(number, reason)
 
     trackCooldowns[number] = os.time() + Config.Cooldown
 
-    BroadcastToPolice('tk-phonetracker:trackStopped', {
+    BroadcastToPolice('jasse_phonetracker:trackStopped', {
         number       = number,
         reason       = reason or 'expired',
         cooldownEnds = trackCooldowns[number],
@@ -351,7 +351,7 @@ local function DoTrackUpdate(number)
     result.totalDuration = Config.TrackDuration
     result.updateNum     = track.updates
 
-    BroadcastToPolice('tk-phonetracker:trackUpdate', result)
+    BroadcastToPolice('jasse_phonetracker:trackUpdate', result)
 
     -- Schedule next update unless we've exhausted the full duration
     local maxUpdates = math.ceil(Config.TrackDuration / Config.UpdateInterval)
@@ -368,17 +368,17 @@ end
 -- Net events
 -- ──────────────────────────────────────────────────────────────────
 
-RegisterNetEvent('tk-phonetracker:startTracking', function(number)
+RegisterNetEvent('jasse_phonetracker:startTracking', function(number)
     local src = source
 
     if not HasPoliceJob(src) then
-        TriggerClientEvent('tk-phonetracker:response', src, { success = false, message = 'Access denied' })
+        TriggerClientEvent('jasse_phonetracker:response', src, { success = false, message = 'Access denied' })
         return
     end
 
     number = tostring(number):gsub('%s+', '')
     if #number < 3 then
-        TriggerClientEvent('tk-phonetracker:response', src, { success = false, message = 'Invalid number' })
+        TriggerClientEvent('jasse_phonetracker:response', src, { success = false, message = 'Invalid number' })
         return
     end
 
@@ -387,7 +387,7 @@ RegisterNetEvent('tk-phonetracker:startTracking', function(number)
         local left = trackCooldowns[number] - os.time()
         local h    = math.floor(left / 3600)
         local m    = math.floor((left % 3600) / 60)
-        TriggerClientEvent('tk-phonetracker:response', src, {
+        TriggerClientEvent('jasse_phonetracker:response', src, {
             success = false,
             message = ('Cooldown active: %dh %dm remaining'):format(h, m),
         })
@@ -395,7 +395,7 @@ RegisterNetEvent('tk-phonetracker:startTracking', function(number)
     end
 
     if activeTracks[number] then
-        TriggerClientEvent('tk-phonetracker:response', src, { success = false, message = 'Already tracking this number' })
+        TriggerClientEvent('jasse_phonetracker:response', src, { success = false, message = 'Already tracking this number' })
         return
     end
 
@@ -403,7 +403,7 @@ RegisterNetEvent('tk-phonetracker:startTracking', function(number)
     local targetId = FindPlayerByPhone(number)
 
     if targetId and not HasPhoneItem(targetId) then
-        TriggerClientEvent('tk-phonetracker:response', src, { success = false, message = 'Target has no phone' })
+        TriggerClientEvent('jasse_phonetracker:response', src, { success = false, message = 'Target has no phone' })
         return
     end
 
@@ -414,13 +414,13 @@ RegisterNetEvent('tk-phonetracker:startTracking', function(number)
         timer     = nil,
     }
 
-    TriggerClientEvent('tk-phonetracker:response', src, { success = true, message = 'Tracking initiated' })
+    TriggerClientEvent('jasse_phonetracker:response', src, { success = true, message = 'Tracking initiated' })
 
     -- Immediate first update
     DoTrackUpdate(number)
 end)
 
-RegisterNetEvent('tk-phonetracker:stopTracking', function(number)
+RegisterNetEvent('jasse_phonetracker:stopTracking', function(number)
     local src = source
     if not HasPoliceJob(src) then return end
     if activeTracks[tostring(number)] then
@@ -428,7 +428,7 @@ RegisterNetEvent('tk-phonetracker:stopTracking', function(number)
     end
 end)
 
-RegisterNetEvent('tk-phonetracker:requestTracks', function()
+RegisterNetEvent('jasse_phonetracker:requestTracks', function()
     local src = source
     if not HasPoliceJob(src) then return end
 
@@ -451,7 +451,7 @@ RegisterNetEvent('tk-phonetracker:requestTracks', function()
         end
     end
 
-    TriggerClientEvent('tk-phonetracker:syncTracks', src, {
+    TriggerClientEvent('jasse_phonetracker:syncTracks', src, {
         tracks    = tracks,
         cooldowns = coolsList,
     })
@@ -490,5 +490,5 @@ exports('GetActiveTracks', function()
 end)
 
 exports('StartTracking', function(number, callerSrc)
-    TriggerEvent('tk-phonetracker:startTracking', number)
+    TriggerEvent('jasse_phonetracker:startTracking', number)
 end)

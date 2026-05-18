@@ -1,5 +1,5 @@
 -- ──────────────────────────────────────────────────────────────────
--- tk-phonetracker | client/main.lua
+-- jasse_phonetracker | client/main.lua
 -- ──────────────────────────────────────────────────────────────────
 
 local isUIOpen      = false
@@ -113,17 +113,17 @@ end
 RegisterNUICallback('startTracking', function(data, cb)
     local number = tostring(data.number or ''):gsub('%s+', '')
     if #number < 3 then cb({ success = false, message = 'Enter a valid number' }) return end
-    TriggerServerEvent('tk-phonetracker:startTracking', number)
+    TriggerServerEvent('jasse_phonetracker:startTracking', number)
     cb({ success = true })
 end)
 
 RegisterNUICallback('stopTracking', function(data, cb)
-    TriggerServerEvent('tk-phonetracker:stopTracking', tostring(data.number))
+    TriggerServerEvent('jasse_phonetracker:stopTracking', tostring(data.number))
     cb({ success = true })
 end)
 
 RegisterNUICallback('requestTracks', function(_, cb)
-    TriggerServerEvent('tk-phonetracker:requestTracks')
+    TriggerServerEvent('jasse_phonetracker:requestTracks')
     cb({})
 end)
 
@@ -138,11 +138,11 @@ end)
 -- Server → client events
 -- ──────────────────────────────────────────────────────────────────
 
-RegisterNetEvent('tk-phonetracker:response', function(data)
+RegisterNetEvent('jasse_phonetracker:response', function(data)
     Notify(data.message, data.success and 'success' or 'error')
 end)
 
-RegisterNetEvent('tk-phonetracker:trackUpdate', function(data)
+RegisterNetEvent('jasse_phonetracker:trackUpdate', function(data)
     if data.found then
         SetTrackBlip(data.number, data.x, data.y, data.z, data.radius)
         if data.updateNum == 1 then
@@ -171,7 +171,7 @@ RegisterNetEvent('tk-phonetracker:trackUpdate', function(data)
     })
 end)
 
-RegisterNetEvent('tk-phonetracker:trackStopped', function(data)
+RegisterNetEvent('jasse_phonetracker:trackStopped', function(data)
     RemoveTrackBlips(data.number)
 
     if data.reason == 'expired' then
@@ -186,7 +186,7 @@ RegisterNetEvent('tk-phonetracker:trackStopped', function(data)
     })
 end)
 
-RegisterNetEvent('tk-phonetracker:syncTracks', function(data)
+RegisterNetEvent('jasse_phonetracker:syncTracks', function(data)
     SendNUIMessage({
         action    = 'syncTracks',
         tracks    = data.tracks,
@@ -203,7 +203,7 @@ local function OpenUI()
     isUIOpen = true
     SetNuiFocus(true, true)
     SendNUIMessage({ action = 'show' })
-    TriggerServerEvent('tk-phonetracker:requestTracks')
+    TriggerServerEvent('jasse_phonetracker:requestTracks')
 end
 
 local function CloseUI()
@@ -232,7 +232,7 @@ exports('CloseUI', CloseUI)
 
 -- Client-side export fires the tracking just like the command does
 exports('TrackNumber', function(number)
-    TriggerServerEvent('tk-phonetracker:startTracking', tostring(number))
+    TriggerServerEvent('jasse_phonetracker:startTracking', tostring(number))
 end)
 
 -- ──────────────────────────────────────────────────────────────────
