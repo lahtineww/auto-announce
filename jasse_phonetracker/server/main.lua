@@ -175,10 +175,97 @@ local function GetPlayerPhoneNumber(src)
     return (num and #num > 0) and num or nil
 end
 
--- Find which connected player owns the given phone number
+-- Hae phone_phones-taulusta kenen identifier omistaa numeron
+local function QueryPhoneOwner(number)
+    -- oxmysql (suositellaan)
+    if GetResourceState('oxmysql') == 'started' then
+        local ok, res
+
+        -- owned_id ensin (lb-phone oletus)
+        ok, res = pcall(function()
+            return exports.oxmysql:scalar_await(
+                'SELECT `owned_id` FROM `phone_phones` WHERE `phone_number` = ? LIMIT 1',
+                { number }
+            )
+        end)
+        if ok and res then return tostring(res) end
+
+        -- kokeillaan myös id-saraketta
+        ok, res = pcall(function()
+            return exports.oxmysql:scalar_await(
+                'SELECT `id` FROM `phone_phones` WHERE `phone_number` = ? LIMIT 1',
+                { number }
+            )
+        end)
+        if ok and res then return tostring(res) end
+    end
+
+    -- mysql-async
+    if GetResourceState('mysql-async') == 'started' then
+        local ok, res
+
+        ok, res = pcall(function()
+            return MySQL.Sync.fetchScalar(
+                'SELECT `owned_id` FROM `phone_phones` WHERE `phone_number` = ? LIMIT 1',
+                { number }
+            )
+        end)
+        if ok and res then return tostring(res) end
+
+        ok, res = pcall(function()
+            return MySQL.Sync.fetchScalar(
+                'SELECT `id` FROM `phone_phones` WHERE `phone_number` = ? LIMIT 1',
+                { number }
+            )
+        end)
+        if ok and res then return tostring(res) end
+    end
+
+    -- ghmattimysql
+    if GetResourceState('ghmattimysql') == 'started' then
+        local ok, res = pcall(function()
+            return exports.ghmattimysql:scalar_await(
+                'SELECT `owned_id` FROM `phone_phones` WHERE `phone_number` = ? LIMIT 1',
+                { number }
+            )
+        end)
+        if ok and res then return tostring(res) end
+    end
+
+    return nil
+end
+
+-- Tarkista vastaako pelaajan jokin identifier annettuun arvoon
+local function IdentifierMatches(src, identifier)
+    for i = 0, GetNumPlayerIdentifiers(src) - 1 do
+        local id = GetPlayerIdentifier(src, i)
+        if id == identifier then return true end
+        -- stored ilman etuliitettä (esim. vain hex)
+        if id == 'license:' .. identifier then return true end
+        if identifier == 'license:' .. id then return true end
+    end
+    return false
+end
+
+-- Etsi serverillä oleva pelaaja puhelinnumeron perusteella
 local function FindPlayerByPhone(targetNumber)
     targetNumber = targetNumber:gsub('%s+', '')
 
+    -- 1) Ensisijainen: hae identifier DB:stä (phone_phones)
+    local ownerIdentifier = QueryPhoneOwner(targetNumber)
+
+    if ownerIdentifier then
+        for _, rawSrc in ipairs(GetPlayers()) do
+            local src = tonumber(rawSrc)
+            if IdentifierMatches(src, ownerIdentifier) then
+                return src
+            end
+        end
+        -- Numero löytyi DB:stä mutta omistaja ei ole online
+        return nil
+    end
+
+    -- 2) Fallback: kokeile suoraan phone-script exportteja
     for _, rawSrc in ipairs(GetPlayers()) do
         local src = tonumber(rawSrc)
         local n   = GetPlayerPhoneNumber(src)
@@ -186,6 +273,7 @@ local function FindPlayerByPhone(targetNumber)
             return src
         end
     end
+
     return nil
 end
 
