@@ -1,40 +1,44 @@
 'use strict';
 
 // ── State ─────────────────────────────────────────────────────────
-const tracks    = {};
-const cooldowns = {};
+const tracks    = {};   // active tracks
+const cooldowns = {};   // active cooldowns
+const history   = [];   // completed tracks this session
 
-// ── Default locale (overwritten by Lua on show) ───────────────────
+let currentView = 'main';
+
+// ── Default locale ────────────────────────────────────────────────
 let L = {
-    ui_brand:           'Poliisi',
-    ui_tab:             'Puhelinträkkeri',
-    ui_dept:            'Poliisilaitos',
-    ui_close_title:     'Sulje',
-    ui_nav_main:        'Seuranta',
-    ui_nav_history:     'Historia',
-    ui_nav_cooldowns:   'Cooldownit',
-    ui_nav_settings:    'Asetukset',
-    ui_col_search:      'Hae numeroa',
-    ui_col_tracks:      'Aktiiviset seurannat',
-    ui_col_cooldowns:   'Cooldownit',
-    ui_placeholder:     'Kirjoita numero…',
-    ui_search_hint:     'Kirjoita puhelinnumero alle ja paina lähetä',
-    ui_no_tracks:       'Ei aktiivisia seurantoja',
-    ui_no_cooldowns:    'Ei cooldowneja',
-    ui_status_found:    'Signaali löydetty',
-    ui_status_offline:  'Kohde offline',
-    ui_status_no_phone: 'Ei puhelinta',
-    ui_status_no_signal:'Ei signaalia',
-    ui_status_syncing:  'Synkronoidaan…',
-    ui_status_unknown:  'Tuntematon',
-    ui_btn_stop:        'Lopeta',
-    ui_time_left:       'Aikaa jäljellä:',
-    ui_update_label:    'Päivitys #',
-    ui_alert_invalid:   'Syötä kelvollinen puhelinnumero',
-    ui_alert_sent:      'Seurantapyyntö lähetetty…',
+    ui_brand:            'Poliisi',
+    ui_tab:              'Puhelinträkkeri',
+    ui_dept:             'Poliisilaitos',
+    ui_nav_main:         'Seuranta',
+    ui_nav_history:      'Historia',
+    ui_col_search:       'Hae numeroa',
+    ui_col_tracks:       'Aktiiviset seurannat',
+    ui_col_cooldowns:    'Cooldownit',
+    ui_placeholder:      'Kirjoita numero…',
+    ui_search_hint:      'Kirjoita puhelinnumero alle ja paina lähetä',
+    ui_no_tracks:        'Ei aktiivisia seurantoja',
+    ui_no_cooldowns:     'Ei cooldowneja',
+    ui_history_title:    'Historia',
+    ui_no_history:       'Ei träkkäyshistoriaa tältä sessiolta',
+    ui_history_expired:  'Päättyi',
+    ui_history_manual:   'Lopetettu',
+    ui_status_found:     'Signaali löydetty',
+    ui_status_offline:   'Kohde offline',
+    ui_status_no_phone:  'Ei puhelinta',
+    ui_status_no_signal: 'Ei signaalia',
+    ui_status_syncing:   'Synkronoidaan…',
+    ui_status_unknown:   'Tuntematon',
+    ui_btn_stop:         'Lopeta',
+    ui_time_left:        'Aikaa jäljellä:',
+    ui_update_label:     'Päivitys #',
+    ui_alert_invalid:    'Syötä kelvollinen puhelinnumero',
+    ui_alert_sent:       'Seurantapyyntö lähetetty…',
 };
 
-// ── Locale application ────────────────────────────────────────────
+// ── Locale ────────────────────────────────────────────────────────
 
 function applyLocale(locale) {
     if (locale) L = Object.assign({}, L, locale);
@@ -44,18 +48,19 @@ function applyLocale(locale) {
     setText('officerName',   L.ui_dept);
     setText('lNavMain',      L.ui_nav_main);
     setText('lNavHistory',   L.ui_nav_history);
-    setText('lNavCooldowns', L.ui_nav_cooldowns);
-    setText('lNavSettings',  L.ui_nav_settings);
     setText('lColSearch',    L.ui_col_search);
     setText('lColTracks',    L.ui_col_tracks);
     setText('lColCooldowns', L.ui_col_cooldowns);
     setText('searchHint',    L.ui_search_hint);
     setText('lNoTracks',     L.ui_no_tracks);
     setText('lNoCooldowns',  L.ui_no_cooldowns);
+    setText('lHistoryTitle', L.ui_history_title);
+    setText('lNoHistory',    L.ui_no_history);
     setAttr('phoneInput',    'placeholder', L.ui_placeholder);
 
     renderTracks();
     renderCooldowns();
+    renderHistory();
 }
 
 function setText(id, val) {
@@ -67,15 +72,30 @@ function setAttr(id, attr, val) {
     if (el) el.setAttribute(attr, val);
 }
 
+// ── View switching ────────────────────────────────────────────────
+
+function switchView(view) {
+    currentView = view;
+
+    document.getElementById('viewMain').classList.toggle('hidden', view !== 'main');
+    document.getElementById('viewHistory').classList.toggle('hidden', view !== 'history');
+
+    document.getElementById('navMain').classList.toggle('active', view === 'main');
+    document.getElementById('navHistory').classList.toggle('active', view === 'history');
+
+    if (view === 'history') renderHistory();
+    if (view === 'main') document.getElementById('phoneInput').focus();
+}
+
 // ── Live clock ────────────────────────────────────────────────────
 
 function updateClock() {
     const now = new Date();
-    const d   = String(now.getDate()).padStart(2,'0');
-    const mo  = String(now.getMonth()+1).padStart(2,'0');
+    const d   = String(now.getDate()).padStart(2, '0');
+    const mo  = String(now.getMonth() + 1).padStart(2, '0');
     const y   = now.getFullYear();
-    const h   = String(now.getHours()).padStart(2,'0');
-    const mi  = String(now.getMinutes()).padStart(2,'0');
+    const h   = String(now.getHours()).padStart(2, '0');
+    const mi  = String(now.getMinutes()).padStart(2, '0');
     setText('liveTime', `${d}/${mo}/${y}, ${h}:${mi}`);
 }
 updateClock();
@@ -85,17 +105,21 @@ setInterval(updateClock, 10000);
 
 function fmtTime(sec) {
     sec = Math.max(0, Math.floor(sec));
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m}:${String(s).padStart(2,'0')}`;
+    return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 }
 
 function fmtCooldown(sec) {
     sec = Math.max(0, Math.floor(sec));
     const h = Math.floor(sec / 3600);
     const m = Math.floor((sec % 3600) / 60);
-    if (h > 0) return `${h}h ${m}m`;
-    return `${m}m`;
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+function fmtTimestamp(ts) {
+    const d  = new Date(ts);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
 }
 
 function statusLabel(status, found) {
@@ -109,18 +133,17 @@ function statusLabel(status, found) {
 
 function escHtml(str) {
     return String(str)
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// ── Alert in left column body ─────────────────────────────────────
+// ── Alert ─────────────────────────────────────────────────────────
 
 let alertTimer = null;
 
 function showAlert(msg, type) {
     const body = document.getElementById('searchBody');
-    // Remove existing alert if any
-    const old = body.querySelector('.alert-row');
+    const old  = body.querySelector('.alert-row');
     if (old) old.remove();
 
     const el = document.createElement('div');
@@ -132,7 +155,7 @@ function showAlert(msg, type) {
     alertTimer = setTimeout(() => el.remove(), 5000);
 }
 
-// ── Render ────────────────────────────────────────────────────────
+// ── Render: tracks ────────────────────────────────────────────────
 
 function renderTracks() {
     const list    = document.getElementById('trackList');
@@ -150,8 +173,7 @@ function renderTracks() {
         const statusKey = t.found ? 'found' : (t.status || 'no_signal');
         const label     = statusLabel(t.status, t.found);
         const pct       = t.totalDuration
-            ? Math.max(0, (t.remaining / t.totalDuration) * 100)
-            : 100;
+            ? Math.max(0, (t.remaining / t.totalDuration) * 100) : 100;
 
         const item = document.createElement('div');
         item.className = 'track-item';
@@ -160,8 +182,7 @@ function renderTracks() {
                 <span class="track-number">${escHtml(number)}</span>
                 <div class="track-right">
                     <div class="status-pill ${statusKey}">
-                        <div class="dot"></div>
-                        ${escHtml(label)}
+                        <div class="dot"></div>${escHtml(label)}
                     </div>
                     <button class="btn-stop" onclick="stopTrack('${escHtml(number)}')">${escHtml(L.ui_btn_stop)}</button>
                 </div>
@@ -170,16 +191,16 @@ function renderTracks() {
                 <span class="track-time">${escHtml(L.ui_time_left)} <b>${fmtTime(t.remaining)}</b></span>
                 <span class="track-upd">${escHtml(L.ui_update_label)}${t.updateNum || 0}</span>
             </div>
-            <div class="progress">
-                <div class="progress-fill" style="width:${pct}%"></div>
-            </div>`;
+            <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>`;
         list.appendChild(item);
     }
 }
 
+// ── Render: cooldowns ─────────────────────────────────────────────
+
 function renderCooldowns() {
     const list    = document.getElementById('cooldownList');
-    const entries = Object.entries(cooldowns).filter(([,v]) => v.remaining > 0);
+    const entries = Object.entries(cooldowns).filter(([, v]) => v.remaining > 0);
 
     if (entries.length === 0) {
         list.innerHTML = `<div class="empty-state">${escHtml(L.ui_no_cooldowns)}</div>`;
@@ -193,6 +214,31 @@ function renderCooldowns() {
         item.innerHTML = `
             <span class="cd-number">${escHtml(number)}</span>
             <span class="cd-time">${fmtCooldown(cd.remaining)}</span>`;
+        list.appendChild(item);
+    }
+}
+
+// ── Render: history ───────────────────────────────────────────────
+
+function renderHistory() {
+    const list = document.getElementById('historyList');
+
+    if (history.length === 0) {
+        list.innerHTML = `<div class="empty-state">${escHtml(L.ui_no_history)}</div>`;
+        return;
+    }
+
+    list.innerHTML = '';
+    // Newest first
+    for (let i = history.length - 1; i >= 0; i--) {
+        const e = history[i];
+        const reasonLabel = e.reason === 'expired' ? L.ui_history_expired : L.ui_history_manual;
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        item.innerHTML = `
+            <span class="history-num">${escHtml(e.number)}</span>
+            <span class="history-reason ${escHtml(e.reason)}">${escHtml(reasonLabel)}</span>
+            <span class="history-time">${fmtTimestamp(e.ts)}</span>`;
         list.appendChild(item);
     }
 }
@@ -240,7 +286,7 @@ window.addEventListener('message', function(event) {
         case 'show':
             applyLocale(d.locale);
             document.getElementById('app').classList.remove('hidden');
-            document.getElementById('phoneInput').focus();
+            switchView('main');
             nuiPost('requestTracks', {});
             break;
 
@@ -260,6 +306,12 @@ window.addEventListener('message', function(event) {
             break;
 
         case 'trackStopped': {
+            // Add to session history before removing from active
+            history.push({
+                number: d.number,
+                reason: d.reason || 'expired',
+                ts:     Date.now(),
+            });
             delete tracks[d.number];
             if (d.cooldownEnds) {
                 const secs = d.cooldownEnds - Math.floor(Date.now() / 1000);
@@ -267,6 +319,7 @@ window.addEventListener('message', function(event) {
             }
             renderTracks();
             renderCooldowns();
+            if (currentView === 'history') renderHistory();
             break;
         }
 

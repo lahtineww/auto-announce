@@ -41,8 +41,6 @@ Locales['fi'] = {
 
     ui_nav_main             = 'Seuranta',
     ui_nav_history          = 'Historia',
-    ui_nav_cooldowns        = 'Cooldownit',
-    ui_nav_settings         = 'Asetukset',
 
     ui_col_search           = 'Hae numeroa',
     ui_col_tracks           = 'Aktiiviset seurannat',
@@ -52,6 +50,11 @@ Locales['fi'] = {
 
     ui_no_cooldowns         = 'Ei cooldowneja',
     ui_no_tracks            = 'Ei aktiivisia seurantoja',
+
+    ui_history_title        = 'Historia',
+    ui_no_history           = 'Ei träkkäyshistoriaa tältä sessiolta',
+    ui_history_expired      = 'Päättyi',
+    ui_history_manual       = 'Lopetettu',
 
     -- ── UI – seurantakohteen tila ────────────────────────────────
     ui_status_found         = 'Signaali löydetty',
@@ -107,8 +110,6 @@ Locales['en'] = {
 
     ui_nav_main             = 'Tracker',
     ui_nav_history          = 'History',
-    ui_nav_cooldowns        = 'Cooldowns',
-    ui_nav_settings         = 'Settings',
 
     ui_col_search           = 'Search Number',
     ui_col_tracks           = 'Active Tracks',
@@ -118,6 +119,11 @@ Locales['en'] = {
 
     ui_no_cooldowns         = 'No cooldowns',
     ui_no_tracks            = 'No active tracks',
+
+    ui_history_title        = 'History',
+    ui_no_history           = 'No tracking history this session',
+    ui_history_expired      = 'Expired',
+    ui_history_manual       = 'Stopped',
 
     -- ── UI – track status labels ──────────────────────────────────
     ui_status_found         = 'Signal Found',
