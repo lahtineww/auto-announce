@@ -59,8 +59,8 @@ local function DiscordLog(webhookUrl, color, title, fields)
     }
 
     local body = json.encode({
-        username   = Config.Discord.BotName or 'Puhelinträkkeri',
-        avatar_url = Config.Discord.BotAvatar or '',
+        username   = Discord.BotName or 'Puhelinträkkeri',
+        avatar_url = Discord.BotAvatar or '',
         embeds     = embed,
     })
 
@@ -350,7 +350,7 @@ local function StopTracking(number, reason, stoppedBy)
     })
 
     -- Discord: seuranta päättyi
-    if Config.Discord and Config.Discord.TrackStop then
+    if Discord.TrackStop then
         local elapsed = os.time() - (track.startTime or os.time())
         local mins    = math.floor(elapsed / 60)
         local secs    = elapsed % 60
@@ -368,7 +368,7 @@ local function StopTracking(number, reason, stoppedBy)
             table.insert(fields, { name = 'Lisenssi',  value = '`' .. pLicense .. '`', inline = false })
         end
 
-        DiscordLog(Config.Discord.TrackStop, Config.Discord.ColorStop, '🔴 Seuranta päättyi', fields)
+        DiscordLog(Discord.TrackStop, Discord.ColorStop, '🔴 Seuranta päättyi', fields)
     end
 
     activeTracks[number] = nil
@@ -417,12 +417,12 @@ local function DoTrackUpdate(number)
     BroadcastToPolice('jasse_phonetracker:trackUpdate', result)
 
     -- Discord: päivityslogi (vain jos webhook asetettu)
-    if Config.Discord and Config.Discord.TrackUpdate then
+    if Discord.TrackUpdate then
         local statusTxt = result.found and ('Löytyi (%.0f, %.0f)'):format(result.x, result.y)
                        or (result.status == 'offline' and 'Kohde offline'
                        or  result.status == 'no_phone' and 'Ei puhelinta'
                        or  'Ei signaalia')
-        DiscordLog(Config.Discord.TrackUpdate, Config.Discord.ColorUpdate, '📍 Seuranta päivitys', {
+        DiscordLog(Discord.TrackUpdate, Discord.ColorUpdate, '📍 Seuranta päivitys', {
             { name = 'Numero',   value = '`' .. number .. '`', inline = true },
             { name = 'Tulos',    value = statusTxt,             inline = true },
             { name = 'Päivitys', value = tostring(track.updates), inline = true },
@@ -450,9 +450,9 @@ RegisterNetEvent('jasse_phonetracker:startTracking', function(number)
     if not HasPoliceJob(src) then
         TriggerClientEvent('jasse_phonetracker:response', src, { success = false, message = _L('response_access_denied') })
         -- Discord: pääsy kielletty
-        if Config.Discord and Config.Discord.AccessDenied then
+        if Discord.AccessDenied then
             local pName, pLicense = GetPlayerInfo(src)
-            DiscordLog(Config.Discord.AccessDenied, Config.Discord.ColorDenied, '⛔ Luvaton käyttöyritys', {
+            DiscordLog(Discord.AccessDenied, Discord.ColorDenied, '⛔ Luvaton käyttöyritys', {
                 { name = 'Pelaaja',  value = pName,                  inline = true },
                 { name = 'Lisenssi', value = '`' .. pLicense .. '`', inline = false },
             })
@@ -501,9 +501,9 @@ RegisterNetEvent('jasse_phonetracker:startTracking', function(number)
     TriggerClientEvent('jasse_phonetracker:response', src, { success = true, message = _L('response_initiated') })
 
     -- Discord: seuranta aloitettu
-    if Config.Discord and Config.Discord.TrackStart then
+    if Discord.TrackStart then
         local pName, pLicense = GetPlayerInfo(src)
-        DiscordLog(Config.Discord.TrackStart, Config.Discord.ColorStart, '📡 Seuranta aloitettu', {
+        DiscordLog(Discord.TrackStart, Discord.ColorStart, '📡 Seuranta aloitettu', {
             { name = 'Träkätty numero',  value = '`' .. number .. '`',   inline = true },
             { name = 'Poliisi',          value = pName,                  inline = true },
             { name = 'Lisenssi',         value = '`' .. pLicense .. '`', inline = false },

@@ -12,6 +12,7 @@ shared_scripts {
 }
 
 server_scripts {
+    'server/discord.lua',
     'server/main.lua'
 }
 
