@@ -38,7 +38,7 @@ CreateThread(function()
         FW = exports['es_extended']:getSharedObject()
     end
 
-    print(('[jasse_phonetracker] Framework: %s'):format(fwName))
+    print(('[jasse_phonetracker] Framework: %s | Locale: %s'):format(fwName, Config.Locale))
 end)
 
 -- ──────────────────────────────────────────────────────────────────
@@ -372,13 +372,13 @@ RegisterNetEvent('jasse_phonetracker:startTracking', function(number)
     local src = source
 
     if not HasPoliceJob(src) then
-        TriggerClientEvent('jasse_phonetracker:response', src, { success = false, message = 'Access denied' })
+        TriggerClientEvent('jasse_phonetracker:response', src, { success = false, message = _L('response_access_denied') })
         return
     end
 
     number = tostring(number):gsub('%s+', '')
     if #number < 3 then
-        TriggerClientEvent('jasse_phonetracker:response', src, { success = false, message = 'Invalid number' })
+        TriggerClientEvent('jasse_phonetracker:response', src, { success = false, message = _L('response_invalid_number') })
         return
     end
 
@@ -389,13 +389,13 @@ RegisterNetEvent('jasse_phonetracker:startTracking', function(number)
         local m    = math.floor((left % 3600) / 60)
         TriggerClientEvent('jasse_phonetracker:response', src, {
             success = false,
-            message = ('Cooldown active: %dh %dm remaining'):format(h, m),
+            message = _L('response_cooldown', h, m),
         })
         return
     end
 
     if activeTracks[number] then
-        TriggerClientEvent('jasse_phonetracker:response', src, { success = false, message = 'Already tracking this number' })
+        TriggerClientEvent('jasse_phonetracker:response', src, { success = false, message = _L('response_already') })
         return
     end
 
@@ -403,7 +403,7 @@ RegisterNetEvent('jasse_phonetracker:startTracking', function(number)
     local targetId = FindPlayerByPhone(number)
 
     if targetId and not HasPhoneItem(targetId) then
-        TriggerClientEvent('jasse_phonetracker:response', src, { success = false, message = 'Target has no phone' })
+        TriggerClientEvent('jasse_phonetracker:response', src, { success = false, message = _L('response_no_phone') })
         return
     end
 
@@ -414,7 +414,7 @@ RegisterNetEvent('jasse_phonetracker:startTracking', function(number)
         timer     = nil,
     }
 
-    TriggerClientEvent('jasse_phonetracker:response', src, { success = true, message = 'Tracking initiated' })
+    TriggerClientEvent('jasse_phonetracker:response', src, { success = true, message = _L('response_initiated') })
 
     -- Immediate first update
     DoTrackUpdate(number)

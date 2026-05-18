@@ -4,6 +4,70 @@
 const tracks    = {};   // { [number]: TrackState }
 const cooldowns = {};   // { [number]: { remaining: seconds } }
 
+// Locale strings – täytetään Luasta tulevalla datalla
+let L = {
+    ui_title:           'Phone Tracker',
+    ui_tab:             'Phone Tracker',
+    ui_dept:            'Police Department',
+    ui_close_title:     'Close',
+    ui_card_track:      'Track Phone Number',
+    ui_phone_label:     'Phone Number',
+    ui_placeholder:     'e.g. 555-1234',
+    ui_search_title:    'Search',
+    ui_btn_start:       'Start Tracking',
+    ui_card_cooldowns:  'Cooldowns',
+    ui_no_cooldowns:    'No cooldowns',
+    ui_card_active:     'Active Tracks',
+    ui_no_tracks:       'No active tracks',
+    ui_status_found:    'Signal Found',
+    ui_status_offline:  'Target Offline',
+    ui_status_no_phone: 'No Phone',
+    ui_status_no_signal:'No Signal',
+    ui_status_syncing:  'Syncing…',
+    ui_status_unknown:  'Unknown',
+    ui_btn_stop:        'Stop',
+    ui_time_left:       'Time left:',
+    ui_update_label:    'Update #',
+    ui_alert_invalid:   'Enter a valid phone number',
+    ui_alert_sent:      'Tracking request sent…',
+};
+
+// ── Locale – aseta UI-tekstit ────────────────────────────────────
+
+function applyLocale(locale) {
+    if (!locale) return;
+    // Yhdistetään saapuva locale defaulteihin
+    L = Object.assign({}, L, locale);
+
+    // Staattinen HTML
+    setText('lTabTitle',      L.ui_tab);
+    setText('officerName',    L.ui_dept);
+    setAttr('btnClose',       'title', L.ui_close_title);
+    setText('lCardTrack',     L.ui_card_track);
+    setText('lPhoneLabel',    L.ui_phone_label);
+    setAttr('phoneInput',     'placeholder', L.ui_placeholder);
+    setAttr('btnSearch',      'title', L.ui_search_title);
+    setText('btnTrack',       L.ui_btn_start);
+    setText('lCardCooldowns', L.ui_card_cooldowns);
+    setText('lNoCooldowns',   L.ui_no_cooldowns);
+    setText('lCardActive',    L.ui_card_active);
+    setText('lNoTracks',      L.ui_no_tracks);
+
+    // Päivitetään dynaamiset listat uusilla käännöksillä
+    renderTracks();
+    renderCooldowns();
+}
+
+function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+}
+
+function setAttr(id, attr, val) {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute(attr, val);
+}
+
 // ── Helpers ───────────────────────────────────────────────────────
 
 function fmtTime(sec) {
@@ -22,12 +86,12 @@ function fmtCooldown(sec) {
 }
 
 function statusLabel(status, found) {
-    if (found)               return 'Signal Found';
-    if (status === 'offline')  return 'Target Offline';
-    if (status === 'no_phone') return 'No Phone';
-    if (status === 'no_signal')return 'No Signal';
-    if (status === 'syncing')  return 'Syncing…';
-    return 'Unknown';
+    if (found)                  return L.ui_status_found;
+    if (status === 'offline')   return L.ui_status_offline;
+    if (status === 'no_phone')  return L.ui_status_no_phone;
+    if (status === 'no_signal') return L.ui_status_no_signal;
+    if (status === 'syncing')   return L.ui_status_syncing;
+    return L.ui_status_unknown;
 }
 
 function showAlert(msg, type) {
@@ -36,6 +100,14 @@ function showAlert(msg, type) {
     el.textContent = msg;
     clearTimeout(el._timer);
     el._timer = setTimeout(() => el.className = 'alert hidden', 4000);
+}
+
+function escHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 }
 
 // ── Render ────────────────────────────────────────────────────────
@@ -47,7 +119,7 @@ function renderTracks() {
     document.getElementById('trackCount').textContent = entries.length;
 
     if (entries.length === 0) {
-        list.innerHTML = '<div class="empty-row">No active tracks</div>';
+        list.innerHTML = `<div class="empty-row">${escHtml(L.ui_no_tracks)}</div>`;
         return;
     }
 
@@ -68,14 +140,14 @@ function renderTracks() {
                 <div style="display:flex;align-items:center;gap:7px;">
                     <div class="status-pill ${statusKey}">
                         <div class="dot"></div>
-                        ${label}
+                        ${escHtml(label)}
                     </div>
-                    <button class="btn-stop" onclick="stopTrack('${escHtml(number)}')">Stop</button>
+                    <button class="btn-stop" onclick="stopTrack('${escHtml(number)}')">${escHtml(L.ui_btn_stop)}</button>
                 </div>
             </div>
             <div class="track-meta">
-                <span class="track-time">Time left: <b>${fmtTime(t.remaining)}</b></span>
-                <span class="track-update">Update #${t.updateNum || 0}</span>
+                <span class="track-time">${escHtml(L.ui_time_left)} <b>${fmtTime(t.remaining)}</b></span>
+                <span class="track-update">${escHtml(L.ui_update_label)}${t.updateNum || 0}</span>
             </div>
             <div class="progress">
                 <div class="progress-fill" style="width:${pct}%"></div>
@@ -89,7 +161,7 @@ function renderCooldowns() {
     const entries = Object.entries(cooldowns).filter(([, v]) => v.remaining > 0);
 
     if (entries.length === 0) {
-        list.innerHTML = '<div class="empty-row">No cooldowns</div>';
+        list.innerHTML = `<div class="empty-row">${escHtml(L.ui_no_cooldowns)}</div>`;
         return;
     }
 
@@ -104,14 +176,6 @@ function renderCooldowns() {
     }
 }
 
-function escHtml(str) {
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}
-
 // ── Actions ───────────────────────────────────────────────────────
 
 function startTracking() {
@@ -119,13 +183,13 @@ function startTracking() {
     const number = input.value.trim();
 
     if (!number || number.length < 3) {
-        showAlert('Enter a valid phone number', 'error');
+        showAlert(L.ui_alert_invalid, 'error');
         return;
     }
 
     nuiPost('startTracking', { number });
     input.value = '';
-    showAlert('Tracking request sent…', 'info');
+    showAlert(L.ui_alert_sent, 'info');
 }
 
 function stopTrack(number) {
@@ -153,6 +217,7 @@ window.addEventListener('message', function (event) {
     switch (d.action) {
 
         case 'show':
+            applyLocale(d.locale);
             document.getElementById('app').classList.remove('hidden');
             document.getElementById('phoneInput').focus();
             nuiPost('requestTracks', {});
@@ -185,7 +250,6 @@ window.addEventListener('message', function (event) {
         }
 
         case 'syncTracks': {
-            // Replace entire state
             Object.keys(tracks).forEach(k => delete tracks[k]);
             Object.keys(cooldowns).forEach(k => delete cooldowns[k]);
 
@@ -220,7 +284,7 @@ document.getElementById('btnTrack').addEventListener('click', startTracking);
 document.getElementById('btnSearch').addEventListener('click', startTracking);
 document.getElementById('btnClose').addEventListener('click', closeUI);
 
-// ── Countdown tick (every second) ────────────────────────────────
+// ── Countdown tick (every second) ─────────────────────────────────
 
 setInterval(function () {
     let changed = false;

@@ -94,7 +94,7 @@ local function SetTrackBlip(number, x, y, z, radius)
     SetBlipScale(blip, 0.85)
     SetBlipAsShortRange(blip, false)
     BeginTextCommandSetBlipName('STRING')
-    AddTextComponentString(('Phone: %s'):format(number))
+    AddTextComponentString(_L('blip_name', number))
     EndTextCommandSetBlipName(blip)
     posBlips[number] = blip
 
@@ -112,7 +112,7 @@ end
 
 RegisterNUICallback('startTracking', function(data, cb)
     local number = tostring(data.number or ''):gsub('%s+', '')
-    if #number < 3 then cb({ success = false, message = 'Enter a valid number' }) return end
+    if #number < 3 then cb({ success = false, message = _L('notify_invalid_number') }) return end
     TriggerServerEvent('jasse_phonetracker:startTracking', number)
     cb({ success = true })
 end)
@@ -146,17 +146,17 @@ RegisterNetEvent('jasse_phonetracker:trackUpdate', function(data)
     if data.found then
         SetTrackBlip(data.number, data.x, data.y, data.z, data.radius)
         if data.updateNum == 1 then
-            Notify(('Tracking %s – signal found'):format(data.number), 'success')
+            Notify(_L('notify_signal_found', data.number), 'success')
         end
     else
         RemoveTrackBlips(data.number)
         if data.updateNum == 1 then
             local msgs = {
-                no_phone  = 'Target has no phone',
-                offline   = 'Target is offline',
-                no_signal = 'No signal found',
+                no_phone  = _L('notify_no_phone'),
+                offline   = _L('notify_offline'),
+                no_signal = _L('notify_no_signal'),
             }
-            Notify(msgs[data.status] or 'No signal', 'error')
+            Notify(msgs[data.status] or _L('notify_no_signal'), 'error')
         end
     end
 
@@ -175,7 +175,7 @@ RegisterNetEvent('jasse_phonetracker:trackStopped', function(data)
     RemoveTrackBlips(data.number)
 
     if data.reason == 'expired' then
-        Notify(('Tracking ended for %s'):format(data.number), 'inform')
+        Notify(_L('notify_ended', data.number), 'inform')
     end
 
     SendNUIMessage({
@@ -202,7 +202,7 @@ local function OpenUI()
     if isUIOpen then return end
     isUIOpen = true
     SetNuiFocus(true, true)
-    SendNUIMessage({ action = 'show' })
+    SendNUIMessage({ action = 'show', locale = GetUILocale() })
     TriggerServerEvent('jasse_phonetracker:requestTracks')
 end
 
@@ -224,7 +224,7 @@ if Config.UseCommand then
 end
 
 if Config.UseKeybind then
-    RegisterKeyMapping(Config.Command, 'Open Phone Tracker', 'keyboard', Config.Keybind)
+    RegisterKeyMapping(Config.Command, _L('keybind_desc'), 'keyboard', Config.Keybind)
 end
 
 exports('OpenUI', OpenUI)

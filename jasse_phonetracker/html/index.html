@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,12 +15,12 @@
                 <div class="header-left">
                     <span class="mdt-badge">MDT</span>
                     <div class="tab-strip">
-                        <div class="tab active">Phone Tracker</div>
+                        <div class="tab active" id="lTabTitle"></div>
                     </div>
                 </div>
                 <div class="header-right">
-                    <span class="officer-name" id="officerName">Police Department</span>
-                    <button class="btn-x" id="btnClose" title="Close">&#10005;</button>
+                    <span class="officer-name" id="officerName"></span>
+                    <button class="btn-x" id="btnClose"></button>
                 </div>
             </div>
 
@@ -32,20 +32,19 @@
 
                     <!-- Search card -->
                     <div class="card">
-                        <div class="card-title">Track Phone Number</div>
+                        <div class="card-title" id="lCardTrack"></div>
 
                         <div class="field">
-                            <label class="field-label">Phone Number</label>
+                            <label class="field-label" id="lPhoneLabel"></label>
                             <div class="input-row">
                                 <input
                                     type="text"
                                     id="phoneInput"
                                     class="text-input"
-                                    placeholder="e.g. 555-1234"
                                     maxlength="20"
                                     autocomplete="off"
                                 >
-                                <button class="btn-search" id="btnSearch" title="Search">
+                                <button class="btn-search" id="btnSearch">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                                     </svg>
@@ -53,18 +52,16 @@
                             </div>
                         </div>
 
-                        <button class="btn-primary full-width" id="btnTrack">
-                            Start Tracking
-                        </button>
+                        <button class="btn-primary full-width" id="btnTrack"></button>
 
                         <div id="statusMsg" class="alert hidden"></div>
                     </div>
 
                     <!-- Cooldowns card -->
                     <div class="card" style="margin-top:10px; flex:1; overflow:hidden; display:flex; flex-direction:column;">
-                        <div class="card-title">Cooldowns</div>
+                        <div class="card-title" id="lCardCooldowns"></div>
                         <div id="cooldownList" class="scroll-list">
-                            <div class="empty-row">No cooldowns</div>
+                            <div class="empty-row" id="lNoCooldowns"></div>
                         </div>
                     </div>
 
@@ -74,11 +71,11 @@
                 <div class="main-area">
                     <div class="card full-card">
                         <div class="card-title-row">
-                            <span class="card-title">Active Tracks</span>
+                            <span class="card-title" id="lCardActive"></span>
                             <span class="count-badge" id="trackCount">0</span>
                         </div>
                         <div id="trackList" class="scroll-list">
-                            <div class="empty-row">No active tracks</div>
+                            <div class="empty-row" id="lNoTracks"></div>
                         </div>
                     </div>
                 </div>

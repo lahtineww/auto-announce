@@ -7,7 +7,8 @@ version '1.0.0'
 description 'Phone Number Tracker for Police | ESX/QBCore/QBox'
 
 shared_scripts {
-    'config.lua'
+    'config.lua',
+    'locales/locales.lua',
 }
 
 server_scripts {
