@@ -40,11 +40,17 @@ local function Notify(msg, notifType)
         if ok then return end
     end
 
-    -- lation_ui
+    -- lation_ui (resource may be named 'lation_ui' or 'lation')
+    local lationRes = nil
+    if GetResourceState('lation_ui') == 'started' then lationRes = 'lation_ui'
+    elseif GetResourceState('lation') == 'started' then lationRes = 'lation' end
+
     if Config.Notify == 'lation'
-    or (Config.Notify == 'auto' and GetResourceState('lation_ui') == 'started') then
+    or (Config.Notify == 'auto' and lationRes) then
+        local res = lationRes or 'lation_ui'
+        local lationType = notifType == 'inform' and 'info' or notifType
         local ok = pcall(function()
-            exports['lation_ui']:Notify(Config.NotifyTitle, msg, notifType, 5000)
+            exports[res]:Notify(Config.NotifyTitle, msg, lationType, 5000)
         end)
         if ok then return end
     end

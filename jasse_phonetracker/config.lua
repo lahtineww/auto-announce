@@ -90,6 +90,7 @@ Config.Cooldown         = 43200  -- cooldown per number after tracking (12 h)
 -- Command to open the UI  (/phonetracker)
 -- ──────────────────────────────────────────────────────────────────
 Config.Command       = 'phonetracker'
+Config.UseCommand    = true        -- rekisteröi /phonetracker komento
 Config.UseKeybind    = false
 Config.Keybind       = 'F6'        -- only used when UseKeybind = true
 

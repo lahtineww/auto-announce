@@ -177,6 +177,8 @@ end
 
 -- Hae phone_phones-taulusta kenen identifier omistaa numeron
 local function QueryPhoneOwner(number)
+    print(('[jasse_phonetracker] QueryPhoneOwner: etsitään numeroa "%s"'):format(number))
+
     -- oxmysql (suositellaan)
     if GetResourceState('oxmysql') == 'started' then
         local ok, res
@@ -188,15 +190,17 @@ local function QueryPhoneOwner(number)
                 { number }
             )
         end)
+        print(('[jasse_phonetracker] oxmysql owned_id: ok=%s res=%s'):format(tostring(ok), tostring(res)))
         if ok and res then return tostring(res) end
 
-        -- kokeillaan myös id-saraketta
+        -- kokeillaan myös identifier-saraketta (jotkut versiot)
         ok, res = pcall(function()
             return exports.oxmysql:scalar_await(
-                'SELECT `id` FROM `phone_phones` WHERE `phone_number` = ? LIMIT 1',
+                'SELECT `identifier` FROM `phone_phones` WHERE `phone_number` = ? LIMIT 1',
                 { number }
             )
         end)
+        print(('[jasse_phonetracker] oxmysql identifier: ok=%s res=%s'):format(tostring(ok), tostring(res)))
         if ok and res then return tostring(res) end
     end
 
@@ -214,7 +218,7 @@ local function QueryPhoneOwner(number)
 
         ok, res = pcall(function()
             return MySQL.Sync.fetchScalar(
-                'SELECT `id` FROM `phone_phones` WHERE `phone_number` = ? LIMIT 1',
+                'SELECT `identifier` FROM `phone_phones` WHERE `phone_number` = ? LIMIT 1',
                 { number }
             )
         end)
@@ -232,6 +236,7 @@ local function QueryPhoneOwner(number)
         if ok and res then return tostring(res) end
     end
 
+    print('[jasse_phonetracker] QueryPhoneOwner: ei löydetty DB:stä, kokeillaan live-skannausta')
     return nil
 end
 
@@ -247,6 +252,11 @@ local function IdentifierMatches(src, identifier)
     return false
 end
 
+-- Vertaa kaksi numeroa ilman välimerkkejä
+local function SameNumber(a, b)
+    return a:gsub('%D', '') == b:gsub('%D', '')
+end
+
 -- Etsi serverillä oleva pelaaja puhelinnumeron perusteella
 local function FindPlayerByPhone(targetNumber)
     targetNumber = targetNumber:gsub('%s+', '')
@@ -255,25 +265,30 @@ local function FindPlayerByPhone(targetNumber)
     local ownerIdentifier = QueryPhoneOwner(targetNumber)
 
     if ownerIdentifier then
+        print(('[jasse_phonetracker] DB löysi omistajan: %s'):format(ownerIdentifier))
         for _, rawSrc in ipairs(GetPlayers()) do
             local src = tonumber(rawSrc)
             if IdentifierMatches(src, ownerIdentifier) then
+                print(('[jasse_phonetracker] Pelaaja löytyi: src=%d'):format(src))
                 return src
             end
         end
-        -- Numero löytyi DB:stä mutta omistaja ei ole online
+        print('[jasse_phonetracker] Omistaja löytyi DB:stä mutta ei ole online')
         return nil
     end
 
-    -- 2) Fallback: kokeile suoraan phone-script exportteja
+    -- 2) Fallback: kokeile suoraan phone-script exportteja (numero normalisoituna)
+    print('[jasse_phonetracker] Fallback: live-skannaus phone exporteilla')
     for _, rawSrc in ipairs(GetPlayers()) do
         local src = tonumber(rawSrc)
         local n   = GetPlayerPhoneNumber(src)
-        if n and n:gsub('%s+', '') == targetNumber then
+        if n and SameNumber(n, targetNumber) then
+            print(('[jasse_phonetracker] Live-skannaus löysi: src=%d numero=%s'):format(src, n))
             return src
         end
     end
 
+    print('[jasse_phonetracker] Pelaajaa ei löydetty millään menetelmällä')
     return nil
 end
 
