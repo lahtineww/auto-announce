@@ -42,6 +42,47 @@ CreateThread(function()
 end)
 
 -- ──────────────────────────────────────────────────────────────────
+-- Discord webhook logger (server-side only)
+-- ──────────────────────────────────────────────────────────────────
+
+local function DiscordLog(webhookUrl, color, title, fields)
+    if not webhookUrl or webhookUrl == '' or webhookUrl == 'WEBHOOK_URL_HERE' then return end
+
+    local embed = {
+        {
+            title       = title,
+            color       = color or 3447003,
+            timestamp   = os.date('!%Y-%m-%dT%H:%M:%SZ'),
+            fields      = fields or {},
+            footer      = { text = 'jasse_phonetracker' },
+        }
+    }
+
+    local body = json.encode({
+        username   = Config.Discord.BotName or 'Puhelinträkkeri',
+        avatar_url = Config.Discord.BotAvatar or '',
+        embeds     = embed,
+    })
+
+    PerformHttpRequest(webhookUrl, function(code, _, headers)
+        -- silent — don't spam console on success/failure
+    end, 'POST', body, { ['Content-Type'] = 'application/json' })
+end
+
+local function GetPlayerInfo(src)
+    local name    = GetPlayerName(src) or 'Tuntematon'
+    local license = nil
+    for i = 0, GetNumPlayerIdentifiers(src) - 1 do
+        local id = GetPlayerIdentifier(src, i)
+        if id and id:sub(1, 8) == 'license:' then
+            license = id
+            break
+        end
+    end
+    return name, license or 'ei lisenssiä'
+end
+
+-- ──────────────────────────────────────────────────────────────────
 -- Helpers
 -- ──────────────────────────────────────────────────────────────────
 
@@ -294,7 +335,7 @@ end
 -- Tracking lifecycle
 -- ──────────────────────────────────────────────────────────────────
 
-local function StopTracking(number, reason)
+local function StopTracking(number, reason, stoppedBy)
     local track = activeTracks[number]
     if not track then return end
 
@@ -307,6 +348,28 @@ local function StopTracking(number, reason)
         reason       = reason or 'expired',
         cooldownEnds = trackCooldowns[number],
     })
+
+    -- Discord: seuranta päättyi
+    if Config.Discord and Config.Discord.TrackStop then
+        local elapsed = os.time() - (track.startTime or os.time())
+        local mins    = math.floor(elapsed / 60)
+        local secs    = elapsed % 60
+        local reasonLabel = reason == 'manual' and 'Lopetettu manuaalisesti' or 'Päättyi (5 min täynnä)'
+
+        local fields = {
+            { name = 'Träkätty numero', value = '`' .. number .. '`',                  inline = true },
+            { name = 'Syy',             value = reasonLabel,                             inline = true },
+            { name = 'Kesto',           value = ('%dm %ds'):format(mins, secs),          inline = true },
+            { name = 'Päivityksiä',     value = tostring(track.updates or 0),            inline = true },
+        }
+        if stoppedBy then
+            local pName, pLicense = GetPlayerInfo(stoppedBy)
+            table.insert(fields, { name = 'Lopettaja', value = pName, inline = true })
+            table.insert(fields, { name = 'Lisenssi',  value = '`' .. pLicense .. '`', inline = false })
+        end
+
+        DiscordLog(Config.Discord.TrackStop, Config.Discord.ColorStop, '🔴 Seuranta päättyi', fields)
+    end
 
     activeTracks[number] = nil
 end
@@ -353,6 +416,19 @@ local function DoTrackUpdate(number)
 
     BroadcastToPolice('jasse_phonetracker:trackUpdate', result)
 
+    -- Discord: päivityslogi (vain jos webhook asetettu)
+    if Config.Discord and Config.Discord.TrackUpdate then
+        local statusTxt = result.found and ('Löytyi (%.0f, %.0f)'):format(result.x, result.y)
+                       or (result.status == 'offline' and 'Kohde offline'
+                       or  result.status == 'no_phone' and 'Ei puhelinta'
+                       or  'Ei signaalia')
+        DiscordLog(Config.Discord.TrackUpdate, Config.Discord.ColorUpdate, '📍 Seuranta päivitys', {
+            { name = 'Numero',   value = '`' .. number .. '`', inline = true },
+            { name = 'Tulos',    value = statusTxt,             inline = true },
+            { name = 'Päivitys', value = tostring(track.updates), inline = true },
+        })
+    end
+
     -- Schedule next update unless we've exhausted the full duration
     local maxUpdates = math.ceil(Config.TrackDuration / Config.UpdateInterval)
     if track.updates < maxUpdates then
@@ -373,6 +449,14 @@ RegisterNetEvent('jasse_phonetracker:startTracking', function(number)
 
     if not HasPoliceJob(src) then
         TriggerClientEvent('jasse_phonetracker:response', src, { success = false, message = _L('response_access_denied') })
+        -- Discord: pääsy kielletty
+        if Config.Discord and Config.Discord.AccessDenied then
+            local pName, pLicense = GetPlayerInfo(src)
+            DiscordLog(Config.Discord.AccessDenied, Config.Discord.ColorDenied, '⛔ Luvaton käyttöyritys', {
+                { name = 'Pelaaja',  value = pName,                  inline = true },
+                { name = 'Lisenssi', value = '`' .. pLicense .. '`', inline = false },
+            })
+        end
         return
     end
 
@@ -416,6 +500,17 @@ RegisterNetEvent('jasse_phonetracker:startTracking', function(number)
 
     TriggerClientEvent('jasse_phonetracker:response', src, { success = true, message = _L('response_initiated') })
 
+    -- Discord: seuranta aloitettu
+    if Config.Discord and Config.Discord.TrackStart then
+        local pName, pLicense = GetPlayerInfo(src)
+        DiscordLog(Config.Discord.TrackStart, Config.Discord.ColorStart, '📡 Seuranta aloitettu', {
+            { name = 'Träkätty numero',  value = '`' .. number .. '`',   inline = true },
+            { name = 'Poliisi',          value = pName,                  inline = true },
+            { name = 'Lisenssi',         value = '`' .. pLicense .. '`', inline = false },
+            { name = 'Kohde online',     value = targetId and 'Kyllä' or 'Ei (offline)', inline = true },
+        })
+    end
+
     -- Immediate first update
     DoTrackUpdate(number)
 end)
@@ -424,7 +519,7 @@ RegisterNetEvent('jasse_phonetracker:stopTracking', function(number)
     local src = source
     if not HasPoliceJob(src) then return end
     if activeTracks[tostring(number)] then
-        StopTracking(tostring(number), 'manual')
+        StopTracking(tostring(number), 'manual', src)
     end
 end)
 

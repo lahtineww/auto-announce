@@ -102,3 +102,30 @@ Config.RadiusBlipColor   = 3     -- blue
 Config.RadiusBlipAlpha   = 80    -- 0-255, circle transparency
 
 Config.NotifyTitle = 'Phone Tracker'
+
+-- ──────────────────────────────────────────────────────────────────
+-- Discord webhooks (server-side only — never sent to clients)
+-- Aseta nil jos et halua logia kyseisestä tapahtumasta.
+-- ──────────────────────────────────────────────────────────────────
+Config.Discord = {
+    -- Seuranta aloitettu
+    TrackStart   = 'WEBHOOK_URL_HERE',
+    -- Seuranta päättyi / lopetettu manuaalisesti
+    TrackStop    = 'WEBHOOK_URL_HERE',
+    -- Sijainti löydetty (30s välein)
+    TrackUpdate  = nil,   -- voi jättää nil:ksi jos lokit liian täynnä
+    -- Pääsy kielletty (ei poliisi-jobbia)
+    AccessDenied = 'WEBHOOK_URL_HERE',
+    -- Cooldown aktiivinen — yritettiin träkätä
+    Cooldown     = nil,
+
+    -- Botin nimi ja avatar webhookissa
+    BotName      = 'Puhelinträkkeri',
+    BotAvatar    = '',   -- URL tai tyhjä
+
+    -- Värit (desimaalilukuina)
+    ColorStart   = 3447003,   -- sininen
+    ColorUpdate  = 9807270,   -- harmaa
+    ColorStop    = 15158332,  -- punainen
+    ColorDenied  = 15158332,  -- punainen
+}
