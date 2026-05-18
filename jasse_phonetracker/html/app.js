@@ -1,59 +1,59 @@
 'use strict';
 
 // ── State ─────────────────────────────────────────────────────────
-const tracks    = {};   // { [number]: TrackState }
-const cooldowns = {};   // { [number]: { remaining: seconds } }
+const tracks    = {};
+const cooldowns = {};
 
-// Locale strings – täytetään Luasta tulevalla datalla
+// ── Default locale (overwritten by Lua on show) ───────────────────
 let L = {
-    ui_title:           'Phone Tracker',
-    ui_tab:             'Phone Tracker',
-    ui_dept:            'Police Department',
-    ui_close_title:     'Close',
-    ui_card_track:      'Track Phone Number',
-    ui_phone_label:     'Phone Number',
-    ui_placeholder:     'e.g. 555-1234',
-    ui_search_title:    'Search',
-    ui_btn_start:       'Start Tracking',
-    ui_card_cooldowns:  'Cooldowns',
-    ui_no_cooldowns:    'No cooldowns',
-    ui_card_active:     'Active Tracks',
-    ui_no_tracks:       'No active tracks',
-    ui_status_found:    'Signal Found',
-    ui_status_offline:  'Target Offline',
-    ui_status_no_phone: 'No Phone',
-    ui_status_no_signal:'No Signal',
-    ui_status_syncing:  'Syncing…',
-    ui_status_unknown:  'Unknown',
-    ui_btn_stop:        'Stop',
-    ui_time_left:       'Time left:',
-    ui_update_label:    'Update #',
-    ui_alert_invalid:   'Enter a valid phone number',
-    ui_alert_sent:      'Tracking request sent…',
+    ui_brand:           'Poliisi',
+    ui_tab:             'Puhelinträkkeri',
+    ui_dept:            'Poliisilaitos',
+    ui_close_title:     'Sulje',
+    ui_nav_main:        'Seuranta',
+    ui_nav_history:     'Historia',
+    ui_nav_cooldowns:   'Cooldownit',
+    ui_nav_settings:    'Asetukset',
+    ui_col_search:      'Hae numeroa',
+    ui_col_tracks:      'Aktiiviset seurannat',
+    ui_col_cooldowns:   'Cooldownit',
+    ui_placeholder:     'Kirjoita numero…',
+    ui_search_hint:     'Kirjoita puhelinnumero alle ja paina lähetä',
+    ui_no_tracks:       'Ei aktiivisia seurantoja',
+    ui_no_cooldowns:    'Ei cooldowneja',
+    ui_status_found:    'Signaali löydetty',
+    ui_status_offline:  'Kohde offline',
+    ui_status_no_phone: 'Ei puhelinta',
+    ui_status_no_signal:'Ei signaalia',
+    ui_status_syncing:  'Synkronoidaan…',
+    ui_status_unknown:  'Tuntematon',
+    ui_btn_stop:        'Lopeta',
+    ui_time_left:       'Aikaa jäljellä:',
+    ui_update_label:    'Päivitys #',
+    ui_alert_invalid:   'Syötä kelvollinen puhelinnumero',
+    ui_alert_sent:      'Seurantapyyntö lähetetty…',
 };
 
-// ── Locale – aseta UI-tekstit ────────────────────────────────────
+// ── Locale application ────────────────────────────────────────────
 
 function applyLocale(locale) {
-    if (!locale) return;
-    // Yhdistetään saapuva locale defaulteihin
-    L = Object.assign({}, L, locale);
+    if (locale) L = Object.assign({}, L, locale);
 
-    // Staattinen HTML
-    setText('lTabTitle',      L.ui_tab);
-    setText('officerName',    L.ui_dept);
-    setAttr('btnClose',       'title', L.ui_close_title);
-    setText('lCardTrack',     L.ui_card_track);
-    setText('lPhoneLabel',    L.ui_phone_label);
-    setAttr('phoneInput',     'placeholder', L.ui_placeholder);
-    setAttr('btnSearch',      'title', L.ui_search_title);
-    setText('btnTrack',       L.ui_btn_start);
-    setText('lCardCooldowns', L.ui_card_cooldowns);
-    setText('lNoCooldowns',   L.ui_no_cooldowns);
-    setText('lCardActive',    L.ui_card_active);
-    setText('lNoTracks',      L.ui_no_tracks);
+    setText('lBrand',        L.ui_brand);
+    setText('lTabTitle',     L.ui_tab);
+    setText('officerName',   L.ui_dept);
+    setText('lNavMain',      L.ui_nav_main);
+    setText('lNavHistory',   L.ui_nav_history);
+    setText('lNavCooldowns', L.ui_nav_cooldowns);
+    setText('lNavSettings',  L.ui_nav_settings);
+    setText('lColSearch',    L.ui_col_search);
+    setText('lColTracks',    L.ui_col_tracks);
+    setText('lColCooldowns', L.ui_col_cooldowns);
+    setText('searchHint',    L.ui_search_hint);
+    setText('lNoTracks',     L.ui_no_tracks);
+    setText('lNoCooldowns',  L.ui_no_cooldowns);
+    setAttr('phoneInput',    'placeholder', L.ui_placeholder);
 
-    // Päivitetään dynaamiset listat uusilla käännöksillä
     renderTracks();
     renderCooldowns();
 }
@@ -62,11 +62,24 @@ function setText(id, val) {
     const el = document.getElementById(id);
     if (el) el.textContent = val;
 }
-
 function setAttr(id, attr, val) {
     const el = document.getElementById(id);
     if (el) el.setAttribute(attr, val);
 }
+
+// ── Live clock ────────────────────────────────────────────────────
+
+function updateClock() {
+    const now = new Date();
+    const d   = String(now.getDate()).padStart(2,'0');
+    const mo  = String(now.getMonth()+1).padStart(2,'0');
+    const y   = now.getFullYear();
+    const h   = String(now.getHours()).padStart(2,'0');
+    const mi  = String(now.getMinutes()).padStart(2,'0');
+    setText('liveTime', `${d}/${mo}/${y}, ${h}:${mi}`);
+}
+updateClock();
+setInterval(updateClock, 10000);
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -74,7 +87,7 @@ function fmtTime(sec) {
     sec = Math.max(0, Math.floor(sec));
     const m = Math.floor(sec / 60);
     const s = sec % 60;
-    return `${m}:${String(s).padStart(2, '0')}`;
+    return `${m}:${String(s).padStart(2,'0')}`;
 }
 
 function fmtCooldown(sec) {
@@ -94,20 +107,29 @@ function statusLabel(status, found) {
     return L.ui_status_unknown;
 }
 
-function showAlert(msg, type) {
-    const el = document.getElementById('statusMsg');
-    el.className = `alert ${type}`;
-    el.textContent = msg;
-    clearTimeout(el._timer);
-    el._timer = setTimeout(() => el.className = 'alert hidden', 4000);
-}
-
 function escHtml(str) {
     return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Alert in left column body ─────────────────────────────────────
+
+let alertTimer = null;
+
+function showAlert(msg, type) {
+    const body = document.getElementById('searchBody');
+    // Remove existing alert if any
+    const old = body.querySelector('.alert-row');
+    if (old) old.remove();
+
+    const el = document.createElement('div');
+    el.className = `alert-row ${type}`;
+    el.textContent = msg;
+    body.insertBefore(el, body.firstChild);
+
+    clearTimeout(alertTimer);
+    alertTimer = setTimeout(() => el.remove(), 5000);
 }
 
 // ── Render ────────────────────────────────────────────────────────
@@ -119,12 +141,11 @@ function renderTracks() {
     document.getElementById('trackCount').textContent = entries.length;
 
     if (entries.length === 0) {
-        list.innerHTML = `<div class="empty-row">${escHtml(L.ui_no_tracks)}</div>`;
+        list.innerHTML = `<div class="empty-state">${escHtml(L.ui_no_tracks)}</div>`;
         return;
     }
 
     list.innerHTML = '';
-
     for (const [number, t] of entries) {
         const statusKey = t.found ? 'found' : (t.status || 'no_signal');
         const label     = statusLabel(t.status, t.found);
@@ -135,9 +156,9 @@ function renderTracks() {
         const item = document.createElement('div');
         item.className = 'track-item';
         item.innerHTML = `
-            <div class="track-row">
+            <div class="track-top">
                 <span class="track-number">${escHtml(number)}</span>
-                <div style="display:flex;align-items:center;gap:7px;">
+                <div class="track-right">
                     <div class="status-pill ${statusKey}">
                         <div class="dot"></div>
                         ${escHtml(label)}
@@ -147,7 +168,7 @@ function renderTracks() {
             </div>
             <div class="track-meta">
                 <span class="track-time">${escHtml(L.ui_time_left)} <b>${fmtTime(t.remaining)}</b></span>
-                <span class="track-update">${escHtml(L.ui_update_label)}${t.updateNum || 0}</span>
+                <span class="track-upd">${escHtml(L.ui_update_label)}${t.updateNum || 0}</span>
             </div>
             <div class="progress">
                 <div class="progress-fill" style="width:${pct}%"></div>
@@ -158,10 +179,10 @@ function renderTracks() {
 
 function renderCooldowns() {
     const list    = document.getElementById('cooldownList');
-    const entries = Object.entries(cooldowns).filter(([, v]) => v.remaining > 0);
+    const entries = Object.entries(cooldowns).filter(([,v]) => v.remaining > 0);
 
     if (entries.length === 0) {
-        list.innerHTML = `<div class="empty-row">${escHtml(L.ui_no_cooldowns)}</div>`;
+        list.innerHTML = `<div class="empty-state">${escHtml(L.ui_no_cooldowns)}</div>`;
         return;
     }
 
@@ -210,7 +231,7 @@ function nuiPost(endpoint, data) {
 
 // ── NUI message handler ───────────────────────────────────────────
 
-window.addEventListener('message', function (event) {
+window.addEventListener('message', function(event) {
     const d = event.data;
     if (!d || !d.action) return;
 
@@ -275,18 +296,17 @@ window.addEventListener('message', function (event) {
 
 // ── Input events ──────────────────────────────────────────────────
 
-document.getElementById('phoneInput').addEventListener('keydown', function (e) {
+document.getElementById('phoneInput').addEventListener('keydown', function(e) {
     if (e.key === 'Enter')  startTracking();
     if (e.key === 'Escape') closeUI();
 });
 
 document.getElementById('btnTrack').addEventListener('click', startTracking);
-document.getElementById('btnSearch').addEventListener('click', startTracking);
 document.getElementById('btnClose').addEventListener('click', closeUI);
 
-// ── Countdown tick (every second) ─────────────────────────────────
+// ── Countdown tick ────────────────────────────────────────────────
 
-setInterval(function () {
+setInterval(function() {
     let changed = false;
 
     for (const t of Object.values(tracks)) {
@@ -297,8 +317,5 @@ setInterval(function () {
         else { delete cooldowns[num]; changed = true; }
     }
 
-    if (changed) {
-        renderTracks();
-        renderCooldowns();
-    }
+    if (changed) { renderTracks(); renderCooldowns(); }
 }, 1000);

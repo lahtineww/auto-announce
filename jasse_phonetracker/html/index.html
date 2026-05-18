@@ -3,83 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phone Tracker</title>
+    <title>Puhelinträkkeri</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="app" class="hidden">
         <div class="window">
 
-            <!-- ── Header bar ─────────────────────────────────────── -->
+            <!-- ── Header ──────────────────────────────────────────── -->
             <div class="header">
-                <div class="header-left">
-                    <span class="mdt-badge">MDT</span>
-                    <div class="tab-strip">
-                        <div class="tab active" id="lTabTitle"></div>
+                <div class="header-brand" id="lBrand">Poliisi</div>
+
+                <div class="tab-strip">
+                    <div class="tab active">
+                        <span class="tab-label" id="lTabTitle"></span>
+                        <button class="tab-x" id="btnClose">&#10005;</button>
                     </div>
+                    <button class="tab-add">+</button>
                 </div>
-                <div class="header-right">
-                    <span class="officer-name" id="officerName"></span>
-                    <button class="btn-x" id="btnClose"></button>
+
+                <div class="officer-block">
+                    <div class="officer-text">
+                        <div class="officer-name" id="officerName"></div>
+                        <div class="officer-time" id="liveTime"></div>
+                    </div>
+                    <div class="officer-avatar">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </div>
                 </div>
             </div>
 
-            <!-- ── Body ───────────────────────────────────────────── -->
+            <!-- ── Body ────────────────────────────────────────────── -->
             <div class="body">
 
-                <!-- Left sidebar: search + cooldowns -->
+                <!-- Left nav sidebar -->
                 <div class="sidebar">
-
-                    <!-- Search card -->
-                    <div class="card">
-                        <div class="card-title" id="lCardTrack"></div>
-
-                        <div class="field">
-                            <label class="field-label" id="lPhoneLabel"></label>
-                            <div class="input-row">
-                                <input
-                                    type="text"
-                                    id="phoneInput"
-                                    class="text-input"
-                                    maxlength="20"
-                                    autocomplete="off"
-                                >
-                                <button class="btn-search" id="btnSearch">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-
-                        <button class="btn-primary full-width" id="btnTrack"></button>
-
-                        <div id="statusMsg" class="alert hidden"></div>
+                    <div class="nav-item active" id="navMain">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 9.7 19.79 19.79 0 0 1 1.61 1.1a2 2 0 0 1 1.99-2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 6.5a16 16 0 0 0 6 6l.94-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 13.92z"/>
+                        </svg>
+                        <span id="lNavMain"></span>
                     </div>
-
-                    <!-- Cooldowns card -->
-                    <div class="card" style="margin-top:10px; flex:1; overflow:hidden; display:flex; flex-direction:column;">
-                        <div class="card-title" id="lCardCooldowns"></div>
-                        <div id="cooldownList" class="scroll-list">
-                            <div class="empty-row" id="lNoCooldowns"></div>
-                        </div>
+                    <div class="nav-item" id="navHistory">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <span id="lNavHistory"></span>
                     </div>
-
+                    <div class="nav-item" id="navCooldowns">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        <span id="lNavCooldowns"></span>
+                    </div>
+                    <div class="nav-item" id="navSettings">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                        <span id="lNavSettings"></span>
+                    </div>
                 </div>
 
-                <!-- Right panel: active tracks -->
-                <div class="main-area">
-                    <div class="card full-card">
-                        <div class="card-title-row">
-                            <span class="card-title" id="lCardActive"></span>
+                <!-- 3-column main content -->
+                <div class="columns">
+
+                    <!-- Column 1: Search -->
+                    <div class="column">
+                        <div class="col-header" id="lColSearch"></div>
+                        <div class="col-body" id="searchBody">
+                            <div class="empty-state" id="searchHint"></div>
+                        </div>
+                        <div class="col-footer">
+                            <input
+                                type="text"
+                                id="phoneInput"
+                                class="col-input"
+                                maxlength="20"
+                                autocomplete="off"
+                            >
+                            <button class="col-send" id="btnTrack">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Active tracks -->
+                    <div class="column">
+                        <div class="col-header">
+                            <span id="lColTracks"></span>
                             <span class="count-badge" id="trackCount">0</span>
                         </div>
-                        <div id="trackList" class="scroll-list">
-                            <div class="empty-row" id="lNoTracks"></div>
+                        <div class="col-body scroll" id="trackList">
+                            <div class="empty-state" id="lNoTracks"></div>
                         </div>
                     </div>
-                </div>
 
+                    <!-- Column 3: Cooldowns -->
+                    <div class="column">
+                        <div class="col-header" id="lColCooldowns"></div>
+                        <div class="col-body scroll" id="cooldownList">
+                            <div class="empty-state" id="lNoCooldowns"></div>
+                        </div>
+                    </div>
+
+                </div>
             </div>
         </div>
     </div>

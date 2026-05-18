@@ -34,21 +34,23 @@ Locales['fi'] = {
     keybind_desc            = 'Avaa puhelinträkkeri',
 
     -- ── UI – staattinen teksti ───────────────────────────────────
-    ui_title                = 'Puhelinträkkeri',
+    ui_brand                = 'Poliisi',
     ui_tab                  = 'Puhelinträkkeri',
     ui_dept                 = 'Poliisilaitos',
     ui_close_title          = 'Sulje',
 
-    ui_card_track           = 'Seuraa puhelinnumeroa',
-    ui_phone_label          = 'Puhelinnumero',
-    ui_placeholder          = 'esim. 555-1234',
-    ui_search_title         = 'Hae',
-    ui_btn_start            = 'Aloita seuranta',
+    ui_nav_main             = 'Seuranta',
+    ui_nav_history          = 'Historia',
+    ui_nav_cooldowns        = 'Cooldownit',
+    ui_nav_settings         = 'Asetukset',
 
-    ui_card_cooldowns       = 'Cooldownit',
+    ui_col_search           = 'Hae numeroa',
+    ui_col_tracks           = 'Aktiiviset seurannat',
+    ui_col_cooldowns        = 'Cooldownit',
+    ui_placeholder          = 'Kirjoita numero…',
+    ui_search_hint          = 'Kirjoita puhelinnumero alle ja paina lähetä',
+
     ui_no_cooldowns         = 'Ei cooldowneja',
-
-    ui_card_active          = 'Aktiiviset seurannat',
     ui_no_tracks            = 'Ei aktiivisia seurantoja',
 
     -- ── UI – seurantakohteen tila ────────────────────────────────
@@ -98,21 +100,23 @@ Locales['en'] = {
     keybind_desc            = 'Open Phone Tracker',
 
     -- ── UI – static text ─────────────────────────────────────────
-    ui_title                = 'Phone Tracker',
+    ui_brand                = 'Police',
     ui_tab                  = 'Phone Tracker',
     ui_dept                 = 'Police Department',
     ui_close_title          = 'Close',
 
-    ui_card_track           = 'Track Phone Number',
-    ui_phone_label          = 'Phone Number',
-    ui_placeholder          = 'e.g. 555-1234',
-    ui_search_title         = 'Search',
-    ui_btn_start            = 'Start Tracking',
+    ui_nav_main             = 'Tracker',
+    ui_nav_history          = 'History',
+    ui_nav_cooldowns        = 'Cooldowns',
+    ui_nav_settings         = 'Settings',
 
-    ui_card_cooldowns       = 'Cooldowns',
+    ui_col_search           = 'Search Number',
+    ui_col_tracks           = 'Active Tracks',
+    ui_col_cooldowns        = 'Cooldowns',
+    ui_placeholder          = 'Type number…',
+    ui_search_hint          = 'Type a phone number below and press send',
+
     ui_no_cooldowns         = 'No cooldowns',
-
-    ui_card_active          = 'Active Tracks',
     ui_no_tracks            = 'No active tracks',
 
     -- ── UI – track status labels ──────────────────────────────────
